@@ -3,7 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import passport from "./configs/passport";
 import { connectDB, checkDBHealth } from "./configs/db";
-
+import session from "express-session";
 import userRoutes from "./routes/users.routes";
 import authRoutes from "./routes/auth.routes";
 import campusRoutes from "./routes/campus.routes";
@@ -27,6 +27,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "oaku_secret_key", // เปลี่ยนเป็น secret จริงใน production
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // ใช้ secure cookie ใน production
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 1 วัน
+    },
+  })
+);
 // CORS Configuration
 app.use(
   cors({
@@ -38,9 +50,7 @@ app.use(
 );
 
 app.use(passport.initialize());
-
-
-
+app.use(passport.session());
 app.get("/api", (req, res) => {
   res.json({
     message: "OAKU Backend API",
