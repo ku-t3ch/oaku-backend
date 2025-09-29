@@ -104,6 +104,8 @@ passport.use(
       clientSecret: process.env.KUALL_CLIENT_SECRET!,
       callbackURL: process.env.KUALL_REDIRECT_URI!,
       scope: ["openid", "profile", "email"],
+      state: true, 
+      pkce: true,
     },
     async (accessToken, refreshToken, params, profile, done) => {
       try {
