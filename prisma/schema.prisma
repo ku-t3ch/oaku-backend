@@ -109,7 +109,7 @@ model User {
   isSuspended       Boolean            @default(false)
   campusId          String
   campus            Campus             @relation(fields: [campusId], references: [id])
-  activities        ActivityHour[]
+  activityHoursFile ActivityHourFile[]
   userOrganizations UserOrganization[] // ✅ สำหรับ USER roles
   userRoles         UserRole[] // ✅ สำหรับ ADMIN roles
   log               Log[]
@@ -123,8 +123,8 @@ model Project {
   nameTh                      String
   dateStart                   DateTime
   dateEnd                     DateTime
-  targetUser                  Json // [{"staff":20 }, {"student":50}]
-  participants                Json? // [{"staff":10 }, {"student":10}]
+  targetUser                  Int?
+  participants                Int?
   schedule                    Json? // [{"location": "somewhere", "eachDay":[{date:"2023-01-01",description:"description",timeline:[{timeStart:"08:00", timeEnd:"10:00",description:"description"}]}]}]
   principlesAndReasoning      String?
   status                      Status                     @default(PADDING) // COMPLETED, IN_PROGRESS, PADDING, CANCELED
@@ -139,17 +139,19 @@ model Project {
   campusId                    String
   organization                Organization               @relation(fields: [organizationId], references: [id])
   campus                      Campus                     @relation(fields: [campusId], references: [id])
-  activities                  ActivityHour[]
+  activityHourFiles           ActivityHourFile[]
+  documentFiles               String?
   complianceStandards         ComplianceStandard[]
   kasetsartStudentIdentities  KasetsartStudentIdentity[]
   sustainableDevelopmentGoals SDG[]
   activityHours               Json?
 }
 
-model ActivityHour {
+model ActivityHourFile {
   id                String   @id @default(uuid())
   isCompleted       Boolean  @default(false)
   fileNamePrinciple String?
+  fileUrl           String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   projectId         String
@@ -185,7 +187,7 @@ model UserOrganization {
   userId             String
   organizationId     String
   userIdCode         String
-  organizationIdCode String
+  publicOrganizationId String
   role               Role         @default(USER) // ✅ จะเป็น USER เสมอ
   position           Position // HEAD หรือ MEMBER
   joinedAt           DateTime     @default(now())

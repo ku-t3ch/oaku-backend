@@ -1,21 +1,51 @@
 import { Router } from "express";
-import { uploadActivityHour,getActivityHourFile } from "../controllers/activityHours.controller";
+import multer from "multer";
+import {
+  uploadActivityHour,
+  // getActivityHourFile,
+  downloadActivityHourFile,
+  deleteActivityHourFile,
+} from "../controllers/activityHours.controller";
 import {
   authenticateJWT,
-  adminOnly,
-  superAdminOnly,
   headOrAdminOnly,
   ALLROLE,
 } from "../middlewares/auth.middleware";
+
 const router = Router();
+const upload = multer();
 
-router.post("/upload", authenticateJWT, ALLROLE, uploadActivityHour);
+// อัปโหลดไฟล์ activity hour
+router.post(
+  "/upload",
+  authenticateJWT,
+  ALLROLE,
+  upload.single("file"),
+  uploadActivityHour
+);
 
+// ดาวน์โหลดไฟล์ activity hour จาก S3
 router.get(
-  "/file/:filename",
+  "/download/:projectId/:fileNamePrinciple",
+  authenticateJWT,
+  ALLROLE,
+  downloadActivityHourFile
+);
+
+// ลบไฟล์ activity hour
+router.delete(
+  "/:id",
   authenticateJWT,
   headOrAdminOnly,
-  getActivityHourFile
+  deleteActivityHourFile
 );
+
+// ดูไฟล์ activity hour (เฉพาะหัวหน้าหรือแอดมิน)
+// router.get(
+//   "/file/:filename",
+//   authenticateJWT,
+//   headOrAdminOnly,
+//   getActivityHourFile
+// );
 
 export default router;

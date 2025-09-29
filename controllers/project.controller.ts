@@ -1,8 +1,8 @@
 import { prisma } from "../configs/db";
+import { uploadPdfDocAndReturnUrl, deletePdfDoc } from "./file.controller";
 import { Request, Response } from "express";
 
 export const getProjects = async (req: Request, res: Response) => {
-
   const { campusId, organizationTypeId, organizationId } = req.query;
 
   try {
@@ -53,6 +53,54 @@ export const getProjects = async (req: Request, res: Response) => {
   }
 };
 
+export const getProjectById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const project = await prisma.project.findUnique({
+      where: { id },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            nameEn: true,
+            nameTh: true,
+            image: true,
+            campus: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            organizationType: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        campus: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        activityHourFiles: true,
+      },
+    });
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    return res.status(200).json(project);
+  } catch (error) {
+    console.error("Error fetching project by id:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export const createProject = async (req: Request, res: Response) => {
   try {
     const {
@@ -74,6 +122,9 @@ export const createProject = async (req: Request, res: Response) => {
       organizationId,
       campusId,
       activityHours,
+      complianceStandards,
+      kasetsartStudentIdentities,
+      sustainableDevelopmentGoals,
     } = req.body;
 
     const project = await prisma.project.create({
@@ -86,6 +137,9 @@ export const createProject = async (req: Request, res: Response) => {
         targetUser,
         participants,
         schedule,
+        complianceStandards,
+        kasetsartStudentIdentities,
+        sustainableDevelopmentGoals,
         principlesAndReasoning,
         status,
         budgetUsed,
@@ -105,3 +159,128 @@ export const createProject = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const uploadDocPdfInProject = async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "File is required" });
+    }
+
+    // Upload PDF to S3 and get URL
+    const fileUrl = await uploadPdfDocAndReturnUrl(
+      `project-docs/${projectId}/${file.originalname}`,
+      file.buffer,
+      file.mimetype
+    );
+
+    // อัปเดต Project ให้เก็บ documentFiles (หรือเพิ่ม logic ตาม schema)
+    const project = await prisma.project.update({
+      where: { id: projectId },
+      data: { documentFiles: fileUrl },
+    });
+
+    return res.status(201).json({ fileUrl, project });
+  } catch (error) {
+    console.error("Error uploading PDF document:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const deleteDocPdfInProject = async (req: Request, res: Response) => {
+  try {
+    const key = req.query.key as string;
+    const projectId = req.params.projectId;
+    if (!key) return res.status(400).json({ message: "key is required" });
+
+    // ลบไฟล์ใน S3
+    const result = await deletePdfDoc(key);
+
+    const project = await prisma.project.update({
+      where: { id: projectId },
+      data: { documentFiles: null },
+    });
+
+    return res.status(200).json({ ...result, project });
+  } catch (error) {
+    return res.status(400).json({ message: (error as Error).message });
+  }
+};
+
+export const completeActivityHourInProject = async (
+  req: Request,
+  res: Response
+) => {
+  const { activityHourFileId, projectId } = req.params;
+
+  try {
+    // อัปเดต activity hour file
+    const activityHour = await prisma.activityHourFile.update({
+      where: { id: activityHourFileId },
+      data: { isCompleted: true },
+    });
+
+    // อัปเดตสถานะ Project
+    const project = await prisma.project.update({
+      where: { id: projectId },
+      data: { status: "COMPLETED" },
+    });
+
+    return res.status(200).json({ activityHour, project });
+  } catch (error) {
+    console.error("Error completing activity hour:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// export const uploadFileActivityHourInProject = async (
+//   req: Request,
+//   res: Response
+// ) => {
+//   try {
+//     const { projectId } = req.params;
+//     const { userId } = req.body;
+//     const file = req.file;
+
+//     if (!file) {
+//       return res.status(400).json({ message: "File is required" });
+//     }
+//     if (!userId) {
+//       return res.status(400).json({ message: "userId is required" });
+//     }
+
+//     // Upload file to S3 and get URL
+//     const fileUrl = await uploadFileActivityHoursAndReturnUrl(
+//       `activity-hours/${projectId}/${file.originalname}`,
+//       file.buffer,
+//       file.mimetype
+//     );
+
+//     // สร้าง record ใหม่ใน ActivityHourFile
+//     const activityHourFile = await prisma.activityHourFile.create({
+//       data: {
+//         fileNamePrinciple: file.originalname,
+//         fileUrl: fileUrl, // เพิ่มบรรทัดนี้
+//         projectId,
+//         userId,
+//         isCompleted: false,
+//       },
+//     });
+
+//     // อัปเดตสถานะ Project
+//     const project = await prisma.project.update({
+//       where: { id: projectId },
+//       data: { status: "IN_PROGRESS" },
+//       include: {
+//         activityHourFiles: true, // ถ้า schema มี relation นี้
+//       },
+//     });
+
+//     return res.status(201).json({ activityHourFile, project });
+//   } catch (error) {
+//     console.error("Error uploading file for activity hours:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };

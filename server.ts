@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import passport from "./configs/passport";
 import { connectDB, checkDBHealth } from "./configs/db";
+
 import userRoutes from "./routes/users.routes";
 import authRoutes from "./routes/auth.routes";
 import campusRoutes from "./routes/campus.routes";
@@ -10,6 +11,7 @@ import organizationRoutes from "./routes/organization.routes";
 import organizationTypeRoutes from "./routes/organizationType.routes";
 import projectRoutes from "./routes/projects.routes";
 import activityHoursRoutes from "./routes/activityHours.routes";
+import kuclubRoutes from "./routes/kuclub.routes";
 import { swaggerUiServe, swaggerUiSetup } from "./swagger";
 
 import dotenv from "dotenv";
@@ -17,7 +19,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3001;
+const PORT = Number(process.env.PORT);
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // Middleware
@@ -30,14 +32,54 @@ app.use(
   cors({
     origin: FRONTEND_URL,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   })
 );
 
-// Passport middleware
-// Routes
 app.use(passport.initialize());
+
+
+
+app.get("/api", (req, res) => {
+  res.json({
+    message: "OAKU Backend API",
+    version: "1.0.0",
+    environment: process.env.NODE_ENV,
+    endpoints: {
+      health: "/health",
+      auth: "/auth/*",
+      users: "/users",
+      campus: "/campus",
+      organizations: "/organizations",
+      "organization-types": "/organization-types",
+      projects: "/projects",
+      "activity-hours": "/activity-hours",
+      kuclub: "/kuclub",
+      "api-docs": "/api-docs",
+    },
+  });
+});
+
+app.get("/health", async (req, res) => {
+  try {
+    const dbHealth = await checkDBHealth();
+    res.json({
+      status: "Backend server is running",
+      port: PORT,
+      environment: process.env.NODE_ENV,
+      database: dbHealth,
+      frontend: FRONTEND_URL,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: "Service unavailable",
+      database: { status: "error", message: "Database health check failed" },
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/campus", campusRoutes);
@@ -46,7 +88,7 @@ app.use("/organization-types", organizationTypeRoutes);
 app.use("/projects", projectRoutes);
 app.use("/activity-hours", activityHoursRoutes);
 app.use("/api-docs", swaggerUiServe, swaggerUiSetup);
-
+app.use("/kuclub", kuclubRoutes);
 
 // 404 handler
 app.use("*", (req, res) => {
@@ -100,7 +142,6 @@ async function startServer() {
         console.log(`   Google OAuth: http://localhost:${PORT}/auth/google`);
         console.log(`   Profile: http://localhost:${PORT}/auth/profile`);
       });
-
       break;
     } catch (error) {
       retries++;
@@ -118,32 +159,5 @@ async function startServer() {
 }
 
 startServer();
-
-// app.get("/health", async (req, res) => {
-//   const dbHealth = await checkDBHealth();
-//   res.json({
-//     status: "Backend server is running",
-//     port: PORT,
-//     environment: process.env.NODE_ENV,
-//     database: dbHealth,
-//     frontend: FRONTEND_URL,
-//     timestamp: new Date().toISOString(),
-//   });
-// });
-
-// Basic API endpoint
-// app.get("/api", (req, res) => {
-//   res.json({
-//     message: "OAKU Backend API",
-//     version: "1.0.0",
-//     environment: process.env.NODE_ENV,
-//     endpoints: {
-//       health: "/health",
-//       auth: "/auth/*",
-//       users: "/api/users (coming soon)",
-//       organizations: "/api/organizations (coming soon)",
-//     },
-//   });
-// });
 
 export default app;

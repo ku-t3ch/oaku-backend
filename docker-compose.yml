@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
@@ -24,37 +24,52 @@ services:
       - oaku_network
 
   backend:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     container_name: oaku_backend
     environment:
       - NODE_ENV=development
-      - PORT=3001
+      - PORT=4001
       - DATABASE_URL=postgresql://oaku_user:oaku_password@postgres:5432/oaku_postgres
-      - FRONTEND_URL=http://localhost:3000
+      - FRONTEND_URL=http://localhost:4000
       - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-make-it-very-long-and-random
       - JWT_REFRESH_SECRET=your-refresh-secret-key-also-change-this-in-production-make-it-different-from-jwt-secret
       - JWT_EXPIRES_IN=7d
       - JWT_REFRESH_EXPIRES_IN=30d
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_CALLBACK_URL=http://localhost:3001/auth/google/callback
+      - GOOGLE_CALLBACK_URL=http://localhost:4001/auth/google/callback
+
+      - KUALL_CLIENT_ID=${KUALL_CLIENT_ID}
+      - KUALL_CLIENT_SECRET=${KUALL_CLIENT_SECRET}
+      - KUALL_REDIRECT_URI=${KUALL_REDIRECT_URI}
+      - KUALL_AUTHORIZATION_ENDPOINT=${KUALL_AUTHORIZATION_ENDPOINT}
+      - KUALL_TOKEN_ENDPOINT=${KUALL_TOKEN_ENDPOINT}
+      - KUALL_USER_INFO_ENDPOINT=${KUALL_USER_INFO_ENDPOINT}
+      - KUALL_END_SESSION_ENDPOINT=${KUALL_END_SESSION_ENDPOINT}
+
+      - S3_BUCKET=${S3_BUCKET}
+      - S3_ACCESS=${S3_ACCESS}
+      - S3_SECRET=${S3_SECRET}
+      - S3_HOST=${S3_HOST}
+
+      - SECRET_KEY_KUCLUB=${SECRET_KEY_KUCLUB}
+      - CLIENT_SECRET_1=${CLIENT_SECRET_1}
     ports:
-      - "3001:3001"
+      - "4001:4001"
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:4001/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 90s
     networks:
       - oaku_network
-
 
 networks:
   oaku_network:
