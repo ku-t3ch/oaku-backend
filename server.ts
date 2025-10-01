@@ -29,7 +29,7 @@ app.use(cookieParser());
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "oaku_secret_key", // เปลี่ยนเป็น secret จริงใน production
+    secret: process.env.SESSION_SECRET || "oaku_secret_key", 
     resave: false,
     saveUninitialized: false,
     cookie: {

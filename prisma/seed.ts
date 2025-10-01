@@ -177,7 +177,7 @@ async function main() {
       data: {
         userId: "b6610450366",
         name: "รวิพล พลศรุตวานิช",
-        email: "surapat.pak@ku.th",
+        email: "rawipon.po@ku.th",
         phoneNumber: "0933244055",
         campusId: bangkokCampus.id,
       },
