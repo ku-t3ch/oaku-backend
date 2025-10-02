@@ -42,7 +42,6 @@ export const editOrganization = async (
   } = req.body;
 
   try {
-
     const org = await prisma.organization.findUnique({ where: { id } });
     if (!org) {
       return res.status(404).json({ error: "Organization not found" });
@@ -51,7 +50,7 @@ export const editOrganization = async (
 
     let imageToUpdate = org.image;
     if (req.file) {
-      const key = `organization/${id}/$${req.file.originalname}`;
+      const key = `organization/${id}/${req.file.originalname}`;
       imageToUpdate = await uploadImageOrganizationAndReturnUrl(
         key,
         req.file.buffer,
