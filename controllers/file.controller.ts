@@ -66,7 +66,10 @@ export async function uploadFileActivityHoursAndReturnUrl(
     ContentType: contentType,
   });
   await s3.send(command);
-  return getS3SignedUrl(key);
+  const bucket = process.env.S3_BUCKET;
+  const endpoint = process.env.S3_HOST;
+
+  return `${endpoint}/${bucket}/${key}`;
 }
 
 export async function getFromS3(key: string) {
