@@ -30,7 +30,7 @@ export async function uploadImageOrganizationAndReturnUrl(
   await s3.send(command);
   const bucket = process.env.S3_BUCKET;
   const endpoint = process.env.S3_HOST;
-  return `https://${endpoint.replace(/^https?:\/\//, "")}/${bucket}/${key}`;
+  return `https://s3.sa.ku.ac.th/${bucket}/${key}`;
 }
 
 export async function uploadPdfDocAndReturnUrl(
