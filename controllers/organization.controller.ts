@@ -50,8 +50,7 @@ export const editOrganization = async (
 
     let imageToUpdate = org.image;
     if (req.file) {
-      const safeFileName = encodeURIComponent(req.file.originalname);
-      const key = `public/organization/${id}/${safeFileName}`;
+      const key = `public/organization/${id}/${req.file.originalname}`;
       imageToUpdate = await uploadImageOrganizationAndReturnUrl(
         key,
         req.file.buffer,
